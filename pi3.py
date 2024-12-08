@@ -13,26 +13,27 @@ import uuid
 import bcrypt
 from cryptography.hazmat.primitives import hashes
 
-# Initialize the environment variable for AES encryption key
+# AES encryption environment variable
 AES_KEY = os.getenv("NOT_MY_KEY").encode()
 
 
-# Server setup
+#sets hostname and server port
 hostName = "localhost"
 serverPort = 8080
+# path for the database file
 db_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "totally_not_my_privateKeys.db")
 
-# Check and initialize the database
+# check and initialize the database
 if not os.path.isfile(db_file_path):
     with open(db_file_path, 'w') as db_file:
         pass
 
-# Initialize the database with users and logs tables
+# initialize the databases for keys, users, and authentication logs
 def initialize_database(db_file):
     try:
         with sqlite3.connect(db_file) as conn:
             cursor = conn.cursor()
-            # Create table for keys
+            # Creates table for keys
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS keys(
                     kid INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,7 +41,7 @@ def initialize_database(db_file):
                     exp INTEGER NOT NULL
                 )
             """)
-            # Create table for users
+            # Creates table for users
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users(
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +52,7 @@ def initialize_database(db_file):
                     last_login TIMESTAMP
                 )
             """)
-            # Create table for authentication logs
+            # Creates table for authentication logs
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS auth_logs(
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,8 +85,9 @@ def decrypt_with_aes(encrypted_data, key):
 
 # User registration endpoint
 def register_user(username, email, db_file):
-    password = str(uuid.uuid4())  # Generate a secure password
-    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())  # Hash the password with bcrypt
+    password = str(uuid.uuid4())  
+    # Hash password with bcrypt
+    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())  
 
     try:
         with sqlite3.connect(db_file) as conn:
@@ -100,7 +102,7 @@ def register_user(username, email, db_file):
         print(f"Error registering user: {e}")
         return None
 
-# Log authentication requests
+# Logs authentication requests
 def log_auth_request(user_id, request_ip, db_file):
     try:
         with sqlite3.connect(db_file) as conn:
@@ -113,9 +115,10 @@ def log_auth_request(user_id, request_ip, db_file):
     except sqlite3.Error as e:
         print(f"Error logging authentication request: {e}")
 
-# Rate-limiting logic (optional)
-auth_requests = {}  # Store timestamps for user IPs
 
+# Stores timestamps for user IPs
+auth_requests = {}  
+# Rate-limiting function
 def rate_limit(request_ip):
     current_time = datetime.datetime.now()
     if request_ip not in auth_requests:
@@ -123,7 +126,8 @@ def rate_limit(request_ip):
         return True
     else:
         requests = auth_requests[request_ip]
-        requests = [t for t in requests if (current_time - t).seconds < 1]  # Keep requests within 1 second
+        # Keeps requests within 1 second
+        requests = [t for t in requests if (current_time - t).seconds < 1]  
         auth_requests[request_ip] = requests
         if len(requests) < 10:
             requests.append(current_time)
