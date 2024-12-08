@@ -164,28 +164,31 @@ class MyServer(BaseHTTPRequestHandler):
             # Call the register_user function to create the user and generate a password
             password = register_user(username, email, db_file_path)
             if password:
-                self.send_response(201)  # Created
+                self.send_response(201) 
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps({"password": password}).encode())
             else:
-                self.send_response(500)  # Internal Server Error
+                # Server error
+                self.send_response(500)  
                 self.end_headers()
 
         elif parsed_path.path == "/auth":
-            # Handle the authentication logic
-            if rate_limit(self.client_address[0]):  # Check for rate limiting
+            # Handle authentication logic
+            # Check for rate limiting
+            if rate_limit(self.client_address[0]):  
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(b"Authenticated successfully!")
                 # Log the authentication request
                 log_auth_request(user_id=1, request_ip=self.client_address[0], db_file=db_file_path)
             else:
-                self.send_response(429)  # Too Many Requests
+                 # Too many requests
+                self.send_response(429) 
                 self.end_headers()
 
         else:
-            self.send_response(405)  # Method Not Allowed
+            self.send_response(405) 
             self.end_headers()
 
     def do_GET(self):
